@@ -7,7 +7,7 @@ int main()
    FILE* output;
 
    input = fopen("128b+32.txt", "r");
-   output = fopen("output.bin","wb");
+   output = fopen("code128b.bin","wb");
 
    if(input == NULL || output == NULL)
    {
