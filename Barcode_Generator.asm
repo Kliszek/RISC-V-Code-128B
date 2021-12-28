@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------
 #
 #only 24-bits 600x50 pixels BMP files are supported
-.eqv BMP_FILE_SIZE 90122
+.eqv BMP_FILE_SIZE 90054	#row width = 1800	image height = 50	pixel array size = 90000	DIB header = 40		header = 14	file size = 90054
 .eqv BYTES_PER_ROW 1800
 
 	.data
@@ -23,10 +23,32 @@ codef:	.asciz "code128b.bin"
 .align 8
 codes:	.space 872
 
+c_err:	.asciz "There was an error with \"code128b.bin\" file.\n"
+s_err:	.asciz "There was an error with writing the file.\n"
+
+
 	.text
 main:
 
-
+	
+	li a7, 1024
+	la a0, codef
+	li a1, 0
+	ecall			#Opens a file with codes
+	
+	
+	la a2, c_err
+	li a1, -1
+	beq a0, a1, error	#error handling
+	
+	
+	li a7, 63
+	la a1, codes
+	li a2, 872
+	ecall			#Reads the file
+	
+	
+	
 	li a7, 4
 	la a0, mes1
 	ecall			#Prints a message asking to type a word
@@ -34,19 +56,47 @@ main:
 	li a7, 8
 	la a0, input
 	li a1, 80
-	ecall			#Reads the typed word
+	ecall			#Reads the typed word	
 	
-	li a7, 1024
-	la a0, codef
-	li a1, 0
-	ecall			#Opens a file with codes
 	
-	#ADD CONDITION IF FILE ERROR
 	
-	li a7, 63
-	la a1, codes
-	li a2, 872
-	ecall			#Reads the file
+	
+	#GENERATE BMP HEADER
+	la a0, image
+	li a1, 0x4D42		# "BM"
+	sh a1, (a0)
+	li a1, BMP_FILE_SIZE	#file size
+	sw a1, 2(a0)
+				#reserved
+	sw zero, 6(a0)
+	li a1, 54		#pixel array offset
+	sb a1, 10(a0)
+	
+	
+	#GENERATE DIB HEADER
+	addi a0, a0, 14
+	li a1, 40		#DIB Header size
+	sw a1, (a0)
+	li a1, 600		#width
+	sw a1, 4(a0)
+	li a1, 50		#height
+	sw a1, 8(a0)
+	li a1, 1		#number of planes
+	sh a1, 12(a0)
+	li a1, 24		#bits per pixel
+	sh a1, 14(a0)
+				#compression
+	sw zero, 16(a0)
+	li a1, 90000		#size of pixel array
+	sw a1, 20(a0)
+	li a1, 2835		#DPI (width)
+	sw a1, 24(a0)
+				#DPI (height)
+	sw a1, 28(a0)
+				#number of colors in the palette 
+	sw zero, 32(a0)
+				#important colors (0 = all colors are important)
+	sw zero, 36(a0)
 	
 	
 #TESTING HERE
@@ -62,9 +112,28 @@ main:
 
 #END OF TESTING
 
+
+
+
+
 exit:	
 	li a7, 10		#exits the program
 	ecall
+	
+	
+	
+error:
+#description:
+#	prints an error message and exits
+#arguments:
+#	a2 - address to the string
+#return value:
+#	none
+	li a7, 4
+	mv a0, a2
+	ecall
+	j exit
+	
 	
 get_barcode:
 #description:
@@ -102,17 +171,21 @@ save_file:
 	li a1, 1
 	la a0, i_name
 	ecall			#Opens the file for writing
+
+	mv s0, a0		#preserve the file decriptor
+		
+
+	la a2, s_err
+	li a1, -1
+	beq a0, a1, error	#error handling
 	
-	#ADD CONDITION HERE (if a0 == -1 then error)
-	
-	mv t1, a0
 	
 	li a7, 64
 	la a1, image
 	li a2, BMP_FILE_SIZE
 	ecall			#Writes the file
 	
-	mv a0, t1
+	mv a0, s0		#restore the file decriptor
 	li a7, 57
 	ecall			#Closes the file
 	
