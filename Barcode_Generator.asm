@@ -16,12 +16,11 @@ image:	.space BMP_FILE_SIZE
 i_name:	.asciz "output.bmp"
 
 mes1:	.asciz "Please type a word:\n"
-
 input:	.space 80
-codef:	.asciz "code128b.bin"
 
 .align 8
 codes:	.space 872
+codef:	.asciz "code128b.bin"
 
 c_err:	.asciz "There was an error with \"code128b.bin\" file.\n"
 s_err:	.asciz "There was an error with writing the file.\n"
@@ -97,7 +96,7 @@ main:
 	sw zero, 32(a0)
 				#important colors (0 = all colors are important)
 	sw zero, 36(a0)
-	
+
 	
 #TESTING HERE
 
@@ -106,6 +105,9 @@ main:
 	lb a0, (a0)
 	jal get_barcode
 	lw a0, (a0)		#Testing get_barcode
+	
+	li a0, 300
+	jal paint_bar
 	
 	jal save_file		#Testing save_file
 
@@ -150,6 +152,43 @@ get_barcode:
 	addi a0, a0, -32
 	slli a0, a0, 3
 	add a0, s0, a0		#calculate the address of barcode (substract 32, multiply by 8 and add this offset to the codes address)
+	
+	lw s0, 0(sp)
+	addi sp, sp, 4
+	jr ra
+	
+	
+paint_bar:
+#description:
+#	paints a bar, WIP
+#arguments:
+#	a0 - the width at which the white bar will be added
+#return value:
+#	none
+	addi sp, sp, -4
+	sw s0, 0(sp)
+	
+	la a1, image
+	addi a1, a1, 54
+	
+	li s0, 3
+	mul a0, a0, s0
+	add a0, a1, a0		#the address of the first pixel is in a0 now
+
+		
+	li a1, 0xff		#255
+	li s0, 90000
+	add s0, a0, s0		#s0 is the highest pixel in the column, the loop goes one pixel lower (1800 bytes) in each iteration
+paint_loop:
+	addi s0, s0, -1800
+	
+	sb a1, (s0)
+	sb a1, 1(s0)
+	sb a1, 2(s0)
+	
+	beq s0, a0, quit_paint_loop
+	j paint_loop
+quit_paint_loop:
 	
 	lw s0, 0(sp)
 	addi sp, sp, 4
