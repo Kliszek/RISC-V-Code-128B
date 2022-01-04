@@ -17,8 +17,9 @@ res:	.space 2
 image:	.space BMP_FILE_SIZE
 i_name:	.asciz "output.bmp"
 
-mes1:	.asciz "Please type a text to encode:\n"
-mes2:	.asciz "Please specify the width of the narrowest bar (in pixels):\n"
+mes1:	.asciz "Please specify the width of the narrowest bar (in pixels):\n"
+mes2:	.asciz "Please type a text to encode:\n"
+mes3:	.asciz "Generating...\n"
 input:	.space 80
 
 .align 8
@@ -49,27 +50,32 @@ main:
 	la a1, codes
 	li a2, 872
 	ecall			#Reads the file
-	
-	
+		
 	
 	li a7, 4
 	la a0, mes1
-	ecall			#Prints a message asking to type a string
-	
-	li a7, 8
-	la a0, input
-	li a1, 80
-	ecall			#Reads the typed word	
-	
-	
-	li a7, 4
-	la a0, mes2
 	ecall			#Prints a message asking to type a width of the narrowest bar
 	
 	li a7, 5
 	ecall			#Reads the number		
 	
 	mv s0, a0		#Stores the number in s0
+	
+	
+	li a7, 4
+	la a0, mes2
+	ecall			#Prints a message asking to type a string
+	
+	li a7, 8
+	la a0, input
+	li a1, 80
+	ecall			#Reads the typed word
+	
+	
+	li a7, 4
+	la a0, mes3
+	ecall			#Prints "Generating...:", so the user knows that he doesn't have to type anymore
+	
 	
 	#GENERATE BMP HEADER
 	la a0, image
