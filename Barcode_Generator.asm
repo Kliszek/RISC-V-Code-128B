@@ -8,6 +8,7 @@
 .eqv BMP_FILE_SIZE 90054	#row width = 1800	image height = 50	pixel array size = 90000	DIB header = 40		header = 14	file size = 90054
 .eqv BYTES_PER_ROW 1800
 .eqv START_B 104
+.eqv STOP 106
 
 	.data
 #space for the 600x50px 24-bits bmp image
@@ -21,11 +22,12 @@ mes2:	.asciz "Please specify the width of the narrowest bar (in pixels):\n"
 input:	.space 80
 
 .align 8
-codes:	.space 872
+codes:	.space 856
 codef:	.asciz "code128b.bin"
 
-c_err:	.asciz "There was an error with \"code128b.bin\" file.\n"
-s_err:	.asciz "There was an error with writing the file.\n"
+c_err:	.asciz "ERROR: There was an error with \"code128b.bin\" file.\n"
+s_err:	.asciz "ERROR: There was an error with writing the file.\n"
+i_err:	.asciz "ERROR: Provided string has some invalid characters.\n"
 
 
 	.text
@@ -121,32 +123,59 @@ paint_white:
 quit_painting_white:
 	
 	
-#TESTING HERE
 
 
-	#la a0, input
-	#lb a0, (a0)
-	#jal get_barcode
-	#lw a0, (a0)		#Testing get_barcode
-	
-	li a0, START_B
-	li a1, 300
-	mv a2, s0
-	jal paint_char
-	li a0, 'W'
-	addi a0, a0, -32
-	mv a2, s0
-	jal paint_char
-	li a0, 'i'
-	addi a0, a0, -32
+
+	li a0, START_B		#painting the first starting symbol
+	li t0, 10
+	mul a1, s0, t0		#calculating where to start: starting after the quiet zone
 	mv a2, s0
 	jal paint_char
 	
-	jal save_file		#Testing save_file
-
-
-#END OF TESTING
-
+	
+	la s1, input
+	li s2, 1		#index of current character
+	li s3, START_B		#the checksum	(starting from START B code)
+	
+read_input_loop:
+	lb a0, 1(s1)
+	beqz a0, quit_reading_input	#checking if the next character is 0 (skipping LINEFEED character)
+	
+	lb a0, (s1)
+	addi a0, a0, -32	#a0 contains a code of the next pattern
+	
+	la a2, i_err
+	blt a0, zero, error
+	li t0, 95
+	bgt a0, t0, error	#error handling (exiting if code is not between 0 and 95)
+	
+	
+	mul t0, a0, s2
+	add s3, s3, t0		#increasing the checksum
+	
+	mv a2, s0
+	
+	
+	
+	jal paint_char
+	
+	addi s1, s1, 1
+	addi s2, s2, 1
+	j read_input_loop
+quit_reading_input:
+	
+	li t0, 103
+	rem s3, s3, t0		#CALCULATED CHECKSUM
+	
+	mv a0, s3
+	mv a2, s0
+	jal paint_char		#painting the pattern for the checksum
+	
+	li a0, STOP
+	mv a2, s0
+	jal paint_char
+	
+	jal save_file		#Saving the file
 
 
 
@@ -255,20 +284,22 @@ paint_char:
 	
 encode_loop:
 	lb s2, (s1)
-	beqz s2, quit_encode_loop
 	
 	mul s2, s2, s3				#scaling the black bar
 	add s2, s2, s0				#s2 is the address at which the paiting (of a current bar) should stop
-white_bar:
-	beq s0, s2, quit_painting_white_bar
+whole_bar:
+	beq s0, s2, quit_painting_whole_bar
 	
 	mv a0, s0
 	jal paint_bar
 	
 	addi s0, s0, 1
-	j white_bar
-quit_painting_white_bar:
+	j whole_bar
+quit_painting_whole_bar:
 	lb s2, 1(s1)
+	
+	beqz s2, quit_encode_loop
+	
 	mul s2, s2, s3				#jump by this amount of pixels (with scaling)
 					
 	add s0, s0, s2
@@ -279,7 +310,7 @@ quit_encode_loop:
 	
 	mv a1, s0
 	
-	lw s2, 0(sp)
+	lw s3, 0(sp)
 	lw s2, 4(sp)
 	lw s1, 8(sp)
 	lw s0, 12(sp)
