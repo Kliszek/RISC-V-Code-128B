@@ -6,7 +6,7 @@ int main()
    FILE* input;
    FILE* output;
 
-   input = fopen("128b+32.txt", "r");
+   input = fopen("128b_codes.txt", "r");
    output = fopen("code128b.bin","wb");
 
    if(input == NULL || output == NULL)
