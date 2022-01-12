@@ -71,11 +71,44 @@ main:
 	la a0, input
 	li a1, 80
 	ecall			#Reads the typed word
+
+	
+	
+	
+	#ANALYZING THE INPUT
+	la s1, input
+	li s2, 0	
+analyze_input:
+	lb a0, 1(s1)
+	beqz a0, quit_analyzing_input
+		
+	lb a0, (s1)
+	
+	la a2, i_err
+	li t0, 32
+	blt a0, t0, error
+	li t0, 127
+	bgt a0, t0, error	#error handling (exiting if character is not between 32 and 127, that is when code is not between 0 and 95)
+
+	addi s2, s2, 1
+	addi s1, s1, 1
+	j analyze_input
+quit_analyzing_input:
+
+	li t0, 11
+	mul s2, s2, t0
+	addi s2, s2, 55		#10+11+length+11+13+10 (quiet zone + start symbol + the string + checksum + stop symbol + quiet zone)
+	mul s2, s2, s0		#multiplying by the width of the narrowest bar
+	li t0, 600
+	la a2, l_err
+	bgt s2, t0, error	#error handling (if the word is too big for 600px bitmap)
+	
 	
 	
 	li a7, 4
 	la a0, mes3
-	ecall			#Prints "Generating...:", so the user knows that he doesn't have to type anymore
+	ecall			#Prints "Generating...:", so the user knows that he doesn't have to type anything anymore	
+	
 	
 	
 	#GENERATE BMP HEADER
@@ -114,35 +147,6 @@ main:
 	sw zero, 32(a0)
 				#important colors (0 = all colors are important)
 	sw zero, 36(a0)
-
-
-	#ANALYZING THE INPUT
-	la s1, input
-	li s2, 0	
-analyze_input:
-	lb a0, 1(s1)
-	beqz a0, quit_analyzing_input
-		
-	lb a0, (s1)
-	
-	la a2, i_err
-	li t0, 32
-	blt a0, t0, error
-	li t0, 127
-	bgt a0, t0, error	#error handling (exiting if character is not between 32 and 127, that is when code is not between 0 and 95)
-
-	addi s2, s2, 1
-	addi s1, s1, 1
-	j analyze_input
-quit_analyzing_input:
-
-	li t0, 11
-	mul s2, s2, t0
-	addi s2, s2, 55		#10+11+length+11+13+10 (quiet zone + start symbol + the string + checksum + stop symbol + quiet zone)
-	mul s2, s2, s0		#multiplying by the width of the narrowest bar
-	li t0, 600
-	la a2, l_err
-	bgt s2, t0, error	#error handling (if the word is too big for 600px bitmap)
 
 
 	
