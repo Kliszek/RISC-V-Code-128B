@@ -29,6 +29,7 @@ codef:	.asciz "code128b.bin"
 c_err:	.asciz "ERROR: There was an error with \"code128b.bin\" file.\n"
 s_err:	.asciz "ERROR: There was an error with writing the file.\n"
 i_err:	.asciz "ERROR: Provided string has some invalid characters.\n"
+l_err:	.asciz "ERROR: Provided string is too long.\n"
 
 
 	.text
@@ -114,9 +115,40 @@ main:
 				#important colors (0 = all colors are important)
 	sw zero, 36(a0)
 
+
+	#ANALYZING THE INPUT
+	la s1, input
+	li s2, 0	
+analyze_input:
+	lb a0, 1(s1)
+	beqz a0, quit_analyzing_input
+		
+	lb a0, (s1)
 	
-	#PAINT THE IMAGE WHITE	
-	addi a0, a0, 40
+	la a2, i_err
+	li t0, 32
+	blt a0, t0, error
+	li t0, 127
+	bgt a0, t0, error	#error handling (exiting if character is not between 32 and 127, that is when code is not between 0 and 95)
+
+	addi s2, s2, 1
+	addi s1, s1, 1
+	j analyze_input
+quit_analyzing_input:
+
+	li t0, 11
+	mul s2, s2, t0
+	addi s2, s2, 55		#10+11+length+11+13+10 (quiet zone + start symbol + the string + checksum + stop symbol + quiet zone)
+	mul s2, s2, s0		#multiplying by the width of the narrowest bar
+	li t0, 600
+	la a2, l_err
+	bgt s2, t0, error	#error handling (if the word is too big for 600px bitmap)
+
+
+	
+	#PAINT THE IMAGE WHITE
+	la, a0, image	
+	addi a0, a0, 54
 	li a1, 0xffffffff
 	
 	li t0, 90000
@@ -128,10 +160,8 @@ paint_white:
 	j paint_white
 quit_painting_white:
 	
-	
 
-
-
+	#PAINTING
 	li a0, START_B		#painting the first starting symbol
 	li t0, 10
 	mul a1, s0, t0		#calculating where to start: starting after the quiet zone
@@ -150,17 +180,10 @@ read_input_loop:
 	lb a0, (s1)
 	addi a0, a0, -32	#a0 contains a code of the next pattern
 	
-	la a2, i_err
-	blt a0, zero, error
-	li t0, 95
-	bgt a0, t0, error	#error handling (exiting if code is not between 0 and 95)
-	
-	
 	mul t0, a0, s2
 	add s3, s3, t0		#increasing the checksum
 	
 	mv a2, s0
-	
 	
 	
 	jal paint_char
@@ -182,8 +205,6 @@ quit_reading_input:
 	jal paint_char
 	
 	jal save_file		#Saving the file
-
-
 
 
 exit:	
