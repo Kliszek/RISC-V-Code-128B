@@ -79,10 +79,14 @@ main:
 	la s1, input
 	li s2, 0	
 analyze_input:
-	lb a0, 1(s1)
-	beqz a0, quit_analyzing_input
-		
 	lb a0, (s1)
+	
+	li t0, '\n'
+	beq a0, t0, quit_analyzing_input	#checking if the next character is 0 or new line (LF or CR)
+	li t0, '\r'
+	beq a0, t0, quit_analyzing_input
+	beqz a0, quit_analyzing_input
+	
 	
 	la a2, i_err
 	li t0, 32
@@ -178,10 +182,15 @@ quit_painting_white:
 	li s3, START_B		#the checksum	(starting from START B code)
 	
 read_input_loop:
-	lb a0, 1(s1)
-	beqz a0, quit_reading_input	#checking if the next character is 0 (skipping LINEFEED character)
-	
 	lb a0, (s1)
+	
+	li t0, '\n'
+	beq a0, t0, quit_reading_input	#checking if the next character is 0 or new line (LF or CR)
+	li t0, '\r'
+	beq a0, t0, quit_reading_input
+	beqz a0, quit_reading_input
+	
+	
 	addi a0, a0, -32	#a0 contains a code of the next pattern
 	
 	mul t0, a0, s2
