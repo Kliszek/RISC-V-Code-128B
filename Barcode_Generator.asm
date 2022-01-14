@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------
 #
 #24-bits 50 pixels high BMP files are supported
-.eqv MAX_FILE_SIZE 204854	#4096*50+54
+.eqv MAX_FILE_SIZE 614454	#4096*3*50+54
 .eqv MAX_IMAGE_WIDTH 4096
 .eqv START_B 104
 .eqv STOP 106
@@ -79,7 +79,12 @@ main:
 	la s1, input
 	li s2, 0	
 analyze_input:
-	lb a0, 1(s1)
+	lb a0, (s1)
+
+	li t0, '\n'
+	beq a0, t0, quit_analyzing_input	#checking if the next character is 0 or new line (LF or CR)
+	li t0, '\r'
+	beq a0, t0, quit_analyzing_input
 	beqz a0, quit_analyzing_input
 		
 	lb a0, (s1)
@@ -117,7 +122,7 @@ quit_analyzing_input:
 	mul s1, s3, t0		#s1 contains pixel array size
 	addi t0, s1, 54
 
-#To sum up:	(everything will be used later)
+#At this point:	(everything will be used later)
 #	s0 - narrowest bar width
 #	s1 - pixel array size
 #	s2 - pixel width of the image
@@ -195,8 +200,13 @@ quit_painting_white:
 	li s6, START_B		#THE CHECKSUM INITIAL VALUE	(starting from START B code)
 	
 read_input_loop:
-	lb a0, 1(s4)
-	beqz a0, quit_reading_input	#checking if the next character is 0 (skipping LINEFEED character)
+	lb a0, (s4)
+	
+	li t0, '\n'
+	beq a0, t0, quit_reading_input	#checking if the next character is 0 or new line (LF or CR)
+	li t0, '\r'
+	beq a0, t0, quit_reading_input
+	beqz a0, quit_reading_input
 	
 	lb a0, (s4)
 	addi a0, a0, -32	#a0 contains a code of the next pattern
@@ -290,11 +300,10 @@ paint_bar:
 
 		
 	li s0, 50
-	mul s0, s0, a1		#HEREEEEEEEEEEEEEE	23 200 / 464
-	add s0, a0, s0		#s0 is the highest pixel in the column, the loop goes one pixel lower (1800 bytes) in each iteration
+	mul s0, s0, a1
+	add s0, a0, s0		#s0 is one pixel higher than the highest pixel in the column, the loop goes one pixel lower in each iteration
 paint_loop:
-	sub s0, s0, a1		#STOP HERE
-	#addi s0, s0, -464
+	sub s0, s0, a1
 	
 	sb zero, (s0)
 	sb zero, 1(s0)
