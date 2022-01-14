@@ -86,8 +86,7 @@ analyze_input:
 	li t0, '\r'
 	beq a0, t0, quit_analyzing_input
 	beqz a0, quit_analyzing_input
-		
-	lb a0, (s1)
+	
 	
 	la a2, i_err
 	li t0, 32
@@ -208,7 +207,7 @@ read_input_loop:
 	beq a0, t0, quit_reading_input
 	beqz a0, quit_reading_input
 	
-	lb a0, (s4)
+	
 	addi a0, a0, -32	#a0 contains a code of the next pattern
 	
 	mul t0, a0, s5
