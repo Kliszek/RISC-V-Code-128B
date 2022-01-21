@@ -180,9 +180,7 @@ quit_analyzing_input:
 paint_white:
 	sw a1, (a0)		#painting 4 bytes at once to speed up the process
 	addi a0, a0, 4
-	beq a0, t0, quit_painting_white
-	j paint_white
-quit_painting_white:
+	blt a0, t0, paint_white
 	
 
 	#PAINTING
