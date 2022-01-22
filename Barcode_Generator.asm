@@ -30,6 +30,7 @@ c_err:	.asciz "ERROR: There was an error with \"code128b.bin\" file.\n"
 s_err:	.asciz "ERROR: There was an error with writing the file.\n"
 i_err:	.asciz "ERROR: Provided string has some invalid characters.\n"
 l_err:	.asciz "ERROR: Provided string is too long.\n"
+r_err:	.asciz "ERROR: Error reading \"code128b.bin\" file.\n"
 
 
 	.text
@@ -51,7 +52,16 @@ main:
 	la a1, codes
 	li a2, 872
 	ecall			#Reads the file
-		
+
+	
+	la a2, r_err
+	li a1, -1
+	beq a0, a1, error	#error handling
+
+
+	li a7, 57
+	ecall			#Closes the file
+
 	
 	li a7, 4
 	la a0, mes1
