@@ -281,7 +281,7 @@ paint_bar:
 #description:
 #	paints a black bar at a given width on the bitmap
 #arguments:
-#	a0 - the width at which the white bar will be added
+#	a0 - the width at which the black bar will be added
 #	a1 - image row size in bytes (with padding)
 #return value:
 #	none
@@ -306,9 +306,7 @@ paint_loop:
 	sb zero, 1(s0)
 	sb zero, 2(s0)
 	
-	beq s0, a0, quit_paint_loop
-	j paint_loop
-quit_paint_loop:
+	bgt s0, a0, paint_loop
 	
 	lw s0, 0(sp)
 	addi sp, sp, 4
