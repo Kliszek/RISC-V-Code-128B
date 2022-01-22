@@ -284,9 +284,7 @@ paint_loop:
 	sb zero, 1(s0)
 	sb zero, 2(s0)
 	
-	beq s0, a0, quit_paint_loop
-	j paint_loop
-quit_paint_loop:
+	bgt s0, a0, paint_loop
 	
 	lw s0, 0(sp)
 	addi sp, sp, 4
